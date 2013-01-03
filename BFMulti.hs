@@ -1,12 +1,23 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 module BFMulti where
 
-import Prelude(Int, maximum, (.), map, ($), (++), Ordering(..), compare, (*), (-), replicate, concat, (+), (*), foldr1, flip, elem, length, (==), Bool(..) )
+import Prelude(Int, maximum, (.), map, ($), (++), Ordering(..), compare, (*), (-), replicate, concat, (+), (*), foldr1, flip, elem, length, (==), Bool(..), Show(..), String )
 import Data.List(nub)
 import qualified BF
 
 data Command = Plus Int | Minus Int | ShiftL Int | ShiftR Int | Out Int | In Int | Loop Int Program
-
+instance Show Command where
+ show (Plus k) = "+"++(show k)
+ show (Minus k) = "-"++(show k)
+ show (ShiftL k) = "<"++(show k)
+ show (ShiftR k) = ">"++(show k)
+ show (Out k) = "."++(show k)
+ show (In k) = ","++(show k)
+ show (Loop k p) = "["  ++ (show k) ++ " " ++ (print p) ++ "]"
+ 
+print :: Program -> String
+print (c:cs) = (show c) ++ (concat . map (\x -> " " ++ (show x)) $ cs)
+ 
 type Program = [Command]
 
 optimize :: Program -> Program
