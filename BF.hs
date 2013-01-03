@@ -3,12 +3,12 @@ module BF where
 
 import Prelude(Show(..),(++),concat,map,(.),($),String)
 
-data Command = Plus | Minus | Left | Right | Out | In | Loop Program
+data Command = Plus | Minus | ShiftL | ShiftR | Out | In | Loop Program
 instance Show Command where
  show Plus = "+"
  show Minus = "-"
- show Left = "<"
- show Right = ">"
+ show ShiftL = "<"
+ show ShiftR = ">"
  show Out = "."
  show In = ","
  show (Loop p) = "[" ++ (concat . (map show) $ p) ++ "]"
@@ -29,10 +29,10 @@ optimize (Plus:xs) = plus (optimize xs) where
 optimize (Minus:xs) = minus (optimize xs) where
                        minus (Plus:ys) = ys
                        minus ys2 = Minus:ys2
-optimize (Left:xs) = left (optimize xs) where
-                      left (Right:ys) = ys
-                      left ys2 = Left:ys2
-optimize (Right:xs) = right (optimize xs) where
-                       right (Left:ys) = ys
-                       right ys2 = Right:ys2
+optimize (ShiftL:xs) = left (optimize xs) where
+                      left (ShiftR:ys) = ys
+                      left ys2 = ShiftL:ys2
+optimize (ShiftR:xs) = right (optimize xs) where
+                       right (ShiftL:ys) = ys
+                       right ys2 = ShiftR:ys2
 
