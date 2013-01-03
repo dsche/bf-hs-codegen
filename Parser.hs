@@ -7,8 +7,6 @@ import Prelude (Char, Show, Eq, String, Maybe(..), map, (.), ($), tail)
 
 data Cmd = P | M | L | R | I | O | B | E | Void
          deriving (Eq, Show)
---data Command = Plus | Minus | Left | Right | In | Out | Loop [Command]
---             deriving Show
 
 type Input = [Cmd]
 
@@ -26,8 +24,8 @@ lex _ = Void
 parse :: Input -> ([Command], Input)
 parse (P:xs) = let (p, r) = parse xs in (Plus:p, r)
 parse (M:xs) = let (p, r) = parse xs in (Minus:p, r)
-parse (L:xs) = let (p, r) = parse xs in (Left:p, r)
-parse (R:xs) = let (p, r) = parse xs in (Right:p, r)
+parse (L:xs) = let (p, r) = parse xs in (ShiftL:p, r)
+parse (R:xs) = let (p, r) = parse xs in (ShiftR:p, r)
 parse (I:xs) = let (p, r) = parse xs in (In:p, r)
 parse (O:xs) = let (p, r) = parse xs in (Out:p, r)
 parse (Void:xs) = parse xs
