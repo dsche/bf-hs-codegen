@@ -21,8 +21,10 @@ print (c:cs) = (show c) ++ (concat . map (\x -> " " ++ (show x)) $ cs)
 type Program = [Command]
 
 optimize :: Program -> Program
-optimize p =  concat $ foldr1 (.) (map ((flip optimize_step) []) [0..(last_tape p)]) $ (map (\x -> [x]) p) where
-
+optimize p =  concat $ foldr1 (.) (map ((flip optimize_step) []) [0..(last_tape p)]) $ (map prepare p) where
+                     prepare (Loop k p) = [Loop k (optimize p)]
+                     prepare c = [c]
+                     
 -- index, accumulator, code, result
 optimize_step :: Int -> Program -> [Program] -> [Program]
 optimize_step i acc [] = [acc]
