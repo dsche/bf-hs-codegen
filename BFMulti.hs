@@ -41,7 +41,7 @@ command_uses c = [index c]
 
 compile :: Program -> BF.Program
 
-compile p = let n = last_tape p in compile' n p 
+compile p = let n = last_tape p in BF.optimize $ compile' n p 
 
 last_tape :: Program -> Int
 last_tape = maximum . (map index) 
@@ -56,30 +56,29 @@ index (In k) = k
 index (Loop k _) = k
  
 
-compile' n p = BF.optimize ( init ++ (concat . (map compile_single) $ p)) where     
-     init = concat . (replicate (n+1)) $ [BF.Plus, BF.ShiftR, BF.ShiftR]
-     compile_single (Plus i) = searchAndModify n i [BF.Plus]
-     compile_single (Minus i) = searchAndModify n i [BF.Minus]
-     compile_single (In i) = searchAndModify n i [BF.In]
-     compile_single (Out i) = searchAndModify n i [BF.Out]
-     compile_single (ShiftL i) = searchAndModify n i [BF.ShiftL, BF.Minus, BF.ShiftR]
-     compile_single (ShiftR i) = searchAndModify n i ((replicate (2*(n+1) - 1) BF.ShiftR) ++ [BF.Plus, BF.ShiftR])
-     compile_single (Loop i p') = (search n i) ++ [BF.Loop ((jump (-2*i-1)) ++ (compile' n p') ++ (search n i))] ++ (jump (-2*i-1)) 
-     
 
-search :: Int -> Int -> BF.Program
-search n i =           (jump (2*i)) 
-                     ++ [BF.Loop (jump (2*(n+1)))]
-                     ++ [BF.Minus]
-                     ++ [BF.Loop ([BF.Plus]++(jump (-2*(n+1)))++[BF.Minus])]
-                     ++ [BF.Plus]
-                     ++ (jump (2*(n+1)))
-                     ++ [BF.ShiftR]
-      
-searchAndModify :: Int -> Int -> BF.Program -> BF.Program
-searchAndModify n i c = (search n i) 
-                      ++ c
-                      ++ (jump (-2*i-1))    
+compile' :: Int -> Program -> BF.Program
+compile' [] = []
+compile' n (p:ps) = init ++ (jump (2*(index p) + 1)) ++ (perform p) ++ (compile'' (index p) ps) where
+                      init = concat . (replicate (n+1)) $ [BF.Plus, BF.ShiftR, BF.ShiftR]
+                      
+                      perform (Plus _) = [BF.Plus]
+                      perform (Minus _) = [BF.Minus]
+                      perform (In _) = [BF.In]
+                      perform (Out _) = [BF.Out]
+                      perform (ShiftL _) = jump (-2*(n+1)) ++ [BF.ShiftL] ++ [BF.Minus] ++ [BF.ShiftR]
+                      perform (ShiftR _) = [BF.ShiftL] ++ [BF.Plus] ++ [BF.ShiftR] ++ jump (2*(n+1))
+                      perform (Loop i p) = BF.Loop (compile'' n i (p ++ [Plus i, Minus i]))  --  <--- HACKY
+                      
+                      compile'' i [] = []
+                      compile'' i (p:ps) = case (index p == i, 2*abs (index p - i) > n+1, index p - i > 0 ) of
+                                   (True,_,_) -> perform p ++ compile'' i ps
+                                   (False,False,_) -> jump (2*(index p - i)-1) ++ search ++ [BF.ShiftR] ++ perform p ++ compile'' (index p) ps
+                                   (False,True,True) -> jump (2*(index p - i)-1 - 2*(n+1)) ++ search ++ [BF.ShiftR] ++ perform p ++ compile'' (index p) ps  
+                                   (False,True,False) -> jump (2*(index p - i)-1 + 2*(n+1)) ++ search ++ [BF.ShiftR] ++ perform p ++ compile'' (index p) ps
+                      
+                      search = [BF.Loop (jump (2*(n+1)))] ++ [BF.Minus] ++ [BF.Loop ([BF.Plus]++(jump (-2*(n+1)))++[BF.Minus])] ++ [BF.Plus]
+     
 
 jump :: Int -> BF.Program     
 jump n = case n `compare` 0 of
